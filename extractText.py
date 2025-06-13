@@ -40,7 +40,7 @@ for file in os.listdir(folder):
                 print(f"Skipping unsupported file type: {file}")
                 continue
 
-            print(text)  # Show first 300 chars of extracted text
+            print(text)  
 
         except Exception as e:
             print(f"Error reading {file}: {e}")
