@@ -26,10 +26,6 @@ def extract_text_docx(path):
     return "\n".join(paragraphs)
 
 def get_all_texts(folder_path=None):
-    """
-    Extracts and combines text from all .pdf and .docx files in the folder.
-    Returns a single string with all the text content.
-    """
     folder_path = folder_path or folder
     texts = []
 

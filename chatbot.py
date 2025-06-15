@@ -1,13 +1,15 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import get_peft_model, LoraConfig, TaskType
+import torch
 
 model_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
 
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(
     model_name,
-    load_in_8bit=True,
-    device_map="auto"
+    torch_dtype=torch.float16,
+    device_map="auto",
+    load_in_4bit=True, 
 )
 
 lora_config = LoraConfig(

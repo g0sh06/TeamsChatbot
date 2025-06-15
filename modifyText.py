@@ -1,39 +1,51 @@
 from extractText import get_all_texts
-text = get_all_texts()
-
 import re
 import nltk
-#Preparing stopwords(a, an, the) by downloading them
-nltk.download('stopwords')
 from nltk.corpus import stopwords
 from nltk.tokenize import TreebankWordTokenizer
-from nltk.stem import WordNetLemmatizer
+from datasets import Dataset
 
-tokenizer = TreebankWordTokenizer()
-# Lemmatization is used for accossiating different words
-# with the main form of the word
-# improve, improving, improvements, improved, improver -> Improve
-lemmatizer = WordNetLemmatizer()
-stop_words = set(stopwords.words('english'))
+# Get raw text
+raw_text = get_all_texts()  # Now returns a single string
 
-def lowering_text(text):
-    return text.lower()
-
-lowering_text = lowering_text(text=text)
-
-def remove_noise(text):
-    # Remove punctuation (non-word, non-whitespace)
-    text = re.sub(r'[^\w\s]', '', text)  
+def preprocess_text(text):
+    """Clean and normalize the text"""
+    # Lowercase
+    text = text.lower()
+    # Remove punctuation
+    text = re.sub(r'[^\w\s]', '', text)
     # Normalize whitespace
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
-cleaned_text = remove_noise(text=lowering_text)
+# Preprocess the text
+processed_text = preprocess_text(raw_text)
 
-def remove_stopwords(text):
-    words = tokenizer.tokenize(text)
-    filtered_text = [word for word in words if word not in stop_words]
-    return ' '.join(filtered_text)
+def chunk_text(text, chunk_size=400, overlap=50):
+    words = text.split()
+    chunks = []
+    
+    for i in range(0, len(words), chunk_size - overlap):
+        chunk = ' '.join(words[i:i + chunk_size])
+        chunks.append(chunk)
+    
+        if i + chunk_size >= len(words):
+            break
+            
+    return chunks
 
-filtered_text = remove_stopwords(text=cleaned_text)
+text_chunks = chunk_text(processed_text)
 
+print(f"Created {len(text_chunks)} text chunks")
+print(f"Sample chunk (first 100 chars): {text_chunks[0][:100]}...")
+
+text_dataset = Dataset.from_dict({"text": text_chunks})
+
+def tokenize_function(examples):
+    """Tokenize the text chunks"""
+    return tokenizer(
+        examples["text"],
+        truncation=True,
+        max_length=512,
+        padding="max_length"  # Added for consistent length
+    )
