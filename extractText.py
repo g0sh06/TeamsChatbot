@@ -25,22 +25,32 @@ def extract_text_docx(path):
     paragraphs = [para.text for para in doc.paragraphs]
     return "\n".join(paragraphs)
 
-for file in os.listdir(folder):
-    path = os.path.normpath(os.path.join(folder, file))
+def get_all_texts(folder_path=None):
+    """
+    Extracts and combines text from all .pdf and .docx files in the folder.
+    Returns a single string with all the text content.
+    """
+    folder_path = folder_path or folder
+    texts = []
 
-    if os.path.isfile(path) and not file.startswith('.') and not file.endswith(".ini"):
-        print(f"\nReading: {file}")
+    for file in os.listdir(folder_path):
+        path = os.path.normpath(os.path.join(folder_path, file))
 
-        try:
-            if file.lower().endswith(".pdf"):
-                text = extract_text_pdf(path)
-            elif file.lower().endswith(".docx"):
-                text = extract_text_docx(path)
-            else:
-                print(f"Skipping unsupported file type: {file}")
-                continue
+        if os.path.isfile(path) and not file.startswith('.') and not file.endswith(".ini"):
+            print(f"\nReading: {file}")
 
-            print(text)  
+            try:
+                if file.lower().endswith(".pdf"):
+                    text = extract_text_pdf(path)
+                elif file.lower().endswith(".docx"):
+                    text = extract_text_docx(path)
+                else:
+                    print(f"Skipping unsupported file type: {file}")
+                    continue
 
-        except Exception as e:
-            print(f"Error reading {file}: {e}")
+                texts.append(text)
+
+            except Exception as e:
+                print(f"Error reading {file}: {e}")
+    
+    return "\n".join(texts)

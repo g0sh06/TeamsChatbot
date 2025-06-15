@@ -1,4 +1,6 @@
-from extractText import text
+from extractText import get_all_texts
+text = get_all_texts()
+
 import re
 import nltk
 #Preparing stopwords(a, an, the) by downloading them
@@ -12,7 +14,6 @@ tokenizer = TreebankWordTokenizer()
 # with the main form of the word
 # improve, improving, improvements, improved, improver -> Improve
 lemmatizer = WordNetLemmatizer()
-
 stop_words = set(stopwords.words('english'))
 
 def lowering_text(text):
