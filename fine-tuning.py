@@ -1,10 +1,10 @@
 from chatbot import *
-from modifyText import text_dataset
+from modifyText import text_dataset, tokenize_function
 from transformers import TrainingArguments, Trainer, DataCollatorForLanguageModeling
 from datasets import Dataset
 
 tokenized_dataset = text_dataset.map(
-    lambda examples: tokenizer(examples["text"], truncation=True, max_length=512),
+    tokenize_function,
     batched=True,
     remove_columns=["text"]
 )
