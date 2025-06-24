@@ -1,7 +1,7 @@
 from chatbot import *
 from modifyText import text_dataset, tokenize_function
 from transformers import TrainingArguments, Trainer, DataCollatorForLanguageModeling
-from datasets import Dataset
+
 
 tokenized_dataset = text_dataset.map(
     tokenize_function,
@@ -10,31 +10,37 @@ tokenized_dataset = text_dataset.map(
 )
 
 training_args = TrainingArguments(
-    output_dir="./tinyllama-finetuned",
+    output_dir="./tinyllama-finetuned-cpu",
     per_device_train_batch_size=1,
-    gradient_accumulation_steps=1,
+    gradient_accumulation_steps=2,
     warmup_steps=10,
-    num_train_epochs=3,
-    learning_rate=2e-4,
-    fp16=True,
+    num_train_epochs=1,
+    learning_rate=5e-6,
     logging_dir="./logs",
-    logging_steps=10,
-    save_total_limit=2,
+    logging_steps=5,
+    save_total_limit=1,
+    no_cuda=True, 
+    optim="adamw_torch",  
+    report_to="none",
+    disable_tqdm=False
 )
 
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
-print("Sample tokenized example:", tokenized_dataset[0])
 
 label_names = ["input_ids"]  
 trainer = Trainer(
     model=model,
     args=training_args,
-    tokenizer=tokenizer,
     train_dataset=tokenized_dataset,
     data_collator=data_collator
 )
 
-trainer.train()
-
-model.save_pretrained("my_tinyllama_finetuned")
-tokenizer.save_pretrained("my_tinyllama_finetuned")
+try:
+    trainer.train()
+    model.save_pretrained("my_tinyllama_finetuned")
+    tokenizer.save_pretrained("my_tinyllama_finetuned")
+    print("Training completed successfully!")
+except Exception as e:
+    print(f"Training failed: {e}")
+    if "CUDA out of memory" in str(e):
+        print("Try reducing batch size or sequence length")

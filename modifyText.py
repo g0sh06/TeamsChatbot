@@ -23,23 +23,20 @@ def preprocess_text(text):
 # Preprocess the text
 processed_text = preprocess_text(raw_text)
 
-def chunk_text(text, chunk_size=400, overlap=50):
-    words = text.split()
+def chunk_text(text, chunk_size=200, overlap=30):
+    tokens = tokenizer.tokenize(text)
     chunks = []
     
-    for i in range(0, len(words), chunk_size - overlap):
-        chunk = ' '.join(words[i:i + chunk_size])
+    for i in range(0, len(tokens), chunk_size - overlap):
+        chunk = ' '.join(tokens[i:i + chunk_size])
         chunks.append(chunk)
     
-        if i + chunk_size >= len(words):
+        if i + chunk_size >= len(tokens):
             break
             
     return chunks
 
 text_chunks = chunk_text(processed_text)
-
-print(f"Created {len(text_chunks)} text chunks")
-print(f"Sample chunk (first 100 chars): {text_chunks[0][:100]}...")
 
 text_dataset = Dataset.from_dict({"text": text_chunks})
 
@@ -48,6 +45,6 @@ def tokenize_function(examples):
     return tokenizer(
         examples["text"],
         truncation=True,
-        max_length=512,
+        max_length=384,
         padding="max_length"  # Added for consistent length
     )
