@@ -4,6 +4,8 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import TreebankWordTokenizer
 from datasets import Dataset
+from transformers import AutoTokenizer
+tokenizer = AutoTokenizer.from_pretrained("TinyLlama/TinyLlama-1.1B-Chat-v1.0")
 
 # Get raw text
 raw_text = get_all_texts()  # Now returns a single string
