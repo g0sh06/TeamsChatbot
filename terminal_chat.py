@@ -2,8 +2,9 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
 import torch
 
-# Load models
+# Loading the model
 model_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+# Added tokenization
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 base_model = AutoModelForCausalLM.from_pretrained(
     model_name,
@@ -12,7 +13,7 @@ base_model = AutoModelForCausalLM.from_pretrained(
 )
 model = PeftModel.from_pretrained(base_model, "my_tinyllama_finetuned").to("cpu")
 
-# System prompt to focus responses
+
 SYSTEM_PROMPT = """You are an expert assistant for the HZ University DSAI course. 
 Answer ONLY using information from the official 2024-2025 course outline document.
 If information isn't in the document, say "This information is not specified in the course outline."
@@ -47,8 +48,8 @@ def chat():
 
         outputs = model.generate(
             inputs,
-            max_new_tokens=200,
-            temperature=0.3,  # Lower temperature for more factual responses
+            max_new_tokens=900,
+            temperature=0.3,  # lower temeprature = more specific answer
             do_sample=True
         )
         

@@ -8,7 +8,7 @@ load_dotenv()
 folder = os.getenv("FOLDER")
 
 if not folder:
-    print("⚠️ FOLDER not set in .env")
+    print("FOLDER not set in .env")
     exit()
 
 folder = os.path.normpath(folder)
