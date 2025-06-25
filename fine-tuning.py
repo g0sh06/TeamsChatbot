@@ -11,11 +11,11 @@ tokenized_dataset = text_dataset.map(
 
 training_args = TrainingArguments(
     output_dir="./tinyllama-finetuned-cpu",
-    per_device_train_batch_size=1,
-    gradient_accumulation_steps=2,
-    warmup_steps=10,
-    num_train_epochs=1,
-    learning_rate=5e-6,
+    per_device_train_batch_size=4,
+    gradient_accumulation_steps=4,
+    warmup_steps=50,
+    num_train_epochs=3,
+    learning_rate=2e-5,
     logging_dir="./logs",
     logging_steps=5,
     save_total_limit=1,

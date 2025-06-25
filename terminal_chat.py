@@ -1,64 +1,61 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
 import torch
-import os
 
-print("=== Starting Chatbot ===")  # Debug line
-
+# Load models
 model_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
-print(f"Loading tokenizer from {model_name}...")  # Debug line
 tokenizer = AutoTokenizer.from_pretrained(model_name)
+base_model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    torch_dtype=torch.float32,
+    device_map="cpu"
+)
+model = PeftModel.from_pretrained(base_model, "my_tinyllama_finetuned").to("cpu")
 
-print("Loading base model...")  # Debug line
-try:
-    base_model = AutoModelForCausalLM.from_pretrained(
-        model_name,
-        torch_dtype=torch.float32,
-        device_map="cpu"
-    )
-except Exception as e:
-    print(f"❌ Failed to load base model: {e}")
-    exit()
+# System prompt to focus responses
+SYSTEM_PROMPT = """You are an expert assistant for the HZ University DSAI course. 
+Answer ONLY using information from the official 2024-2025 course outline document.
+If information isn't in the document, say "This information is not specified in the course outline."
+For dates and schedules, refer specifically to the course schedule section.
 
-peft_model_path = os.path.abspath("my_tinyllama_finetuned")
-print(f"Looking for fine-tuned model at: {peft_model_path}")  # Debug line
+Document summary:
+- Course starts on Tuesday 22-04-2025
+- Main lectures on Mondays and Tuesdays
+- Project check-ins on Wednesdays
+- Written test on Tuesday 24-06-2025
+"""
 
-if not os.path.exists(peft_model_path):
-    print(f"❌ Directory not found: {peft_model_path}")
-    print("Please run fine-tuning.py first to create the model")
-    exit()
-
-print("Loading fine-tuned adapter...")  # Debug line
-try:
-    model = PeftModel.from_pretrained(base_model, peft_model_path).to("cpu")
-    print("✅ Model loaded successfully!")  # Debug line
-except Exception as e:
-    print(f"❌ Failed to load fine-tuned model: {e}")
-    print("Required files in the directory:")
-    print("- adapter_config.json")
-    print("- adapter_model.bin")
-    exit()
+print("\nDSAI Course Assistant ready! Type 'quit' to exit.")
 
 def chat():
-    print("\nChatbot ready! Type 'quit' to exit.")
     while True:
-        try:
-            user_input = input("\nYou: ")
-            if user_input.lower() in ['quit', 'exit']:
-                break
-            
-            print("Generating response...")  # Debug line
-            inputs = tokenizer(user_input, return_tensors="pt").to("cpu")
-            outputs = model.generate(**inputs, max_new_tokens=100)
-            response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-            
-            print("\nAI:", response)
-        except KeyboardInterrupt:
-            print("\nExiting...")
+        user_input = input("\nYou: ")
+        if user_input.lower() in ['quit', 'exit']:
             break
-        except Exception as e:
-            print(f"\n⚠ Error: {e}")
-            continue
+
+        # Format with system prompt and user question
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_input}
+        ]
+
+        inputs = tokenizer.apply_chat_template(
+            messages,
+            add_generation_prompt=True,
+            return_tensors="pt"
+        ).to("cpu")
+
+        outputs = model.generate(
+            inputs,
+            max_new_tokens=200,
+            temperature=0.3,  # Lower temperature for more factual responses
+            do_sample=True
+        )
+        
+        # Clean the response
+        full_response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        assistant_response = full_response.split("<|assistant|>")[-1].strip()
+        print("\nAI:", assistant_response)
 
 if __name__ == "__main__":
     chat()
