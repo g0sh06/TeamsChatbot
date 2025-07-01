@@ -1,0 +1,47 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.11/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.11",
+  "version": "1.0.0",
+  "id": "12345678-1234-1234-1234-123456789012",
+  "packageName": "com.yourcompany.tinyllamabot",
+  "name": {
+    "short": "TinyLlama Bot",
+    "full": "DSAI Course Assistant"
+  },
+  "description": {
+    "short": "Chat with our DSAI course assistant",
+    "full": "Ask questions about the DSAI course outline, schedule, and requirements. Powered by TinyLlama AI."
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "accentColor": "#FFFFFF",
+  "bots": [
+    {
+      "botId": "tinyllama-bot",
+      "scopes": ["personal", "team"],
+      "supportsFiles": false,
+      "isNotificationOnly": false,
+      "commandLists": [
+        {
+          "scopes": ["personal", "team"],
+          "commands": [
+            {
+              "title": "Help",
+              "description": "Show available commands"
+            },
+            {
+              "title": "Ask",
+              "description": "Ask about the course"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "permissions": ["identity", "messageTeamMembers"],
+  "validDomains": [
+    "your-render-app.onrender.com"  
+  ]
+}
