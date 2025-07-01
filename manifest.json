@@ -42,6 +42,6 @@
   ],
   "permissions": ["identity", "messageTeamMembers"],
   "validDomains": [
-    "your-render-app.onrender.com"  
+    "https://teamschatbot-nx0h.onrender.com"  
   ]
 }
