@@ -2,7 +2,7 @@
 torch==2.6.0
 torchvision==0.17.0
 torchaudio==2.6.0
-transformers>=4.41.2,<4.42  # Allow latest 4.41.x patch :cite[1]
+transformers==4.40.1  
 peft==0.15.2
 fastapi==0.104.1
 uvicorn==0.24.0.post1
