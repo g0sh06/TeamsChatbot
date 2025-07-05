@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-import fitz  # PyMuPDF
+import pdfplumber
 from docx import Document
 
 # Load environment variables
@@ -14,16 +14,42 @@ if not folder:
 folder = os.path.normpath(folder)
 
 def extract_text_pdf(path):
-    doc = fitz.open(path)
     text = ""
-    for page in doc:
-        text += page.get_text()
-    return text
+    try:
+        with pdfplumber.open(path) as pdf:
+            for page in pdf.pages:
+                # Extract plain text
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
+
+                # Extract and convert tables
+                tables = page.extract_tables()
+                for table in tables:
+                    headers = table[0]
+                    for row in table[1:]:
+                        # Skip if all cells are empty
+                        if not any(cell for cell in row):
+                            continue
+                        sentence_parts = []
+                        for header, cell in zip(headers, row):
+                            if header and cell:
+                                sentence_parts.append(f"{header.strip()}: {cell.strip()}")
+                        if sentence_parts:
+                            text += "\n" + ". ".join(sentence_parts) + ".\n"
+
+    except Exception as e:
+        print(f"Failed to extract PDF ({path}): {e}")
+    return text.strip()
 
 def extract_text_docx(path):
-    doc = Document(path)
-    paragraphs = [para.text for para in doc.paragraphs]
-    return "\n".join(paragraphs)
+    try:
+        doc = Document(path)
+        paragraphs = [para.text.strip() for para in doc.paragraphs if para.text.strip()]
+        return "\n".join(paragraphs)
+    except Exception as e:
+        print(f"Failed to extract DOCX ({path}): {e}")
+        return ""
 
 def get_all_texts(folder_path=None):
     folder_path = folder_path or folder
@@ -34,19 +60,19 @@ def get_all_texts(folder_path=None):
 
         if os.path.isfile(path) and not file.startswith('.') and not file.endswith(".ini"):
             print(f"\nReading: {file}")
+            text = ""
 
-            try:
-                if file.lower().endswith(".pdf"):
-                    text = extract_text_pdf(path)
-                elif file.lower().endswith(".docx"):
-                    text = extract_text_docx(path)
-                else:
-                    print(f"Skipping unsupported file type: {file}")
-                    continue
+            if file.lower().endswith(".pdf"):
+                text = extract_text_pdf(path)
+            elif file.lower().endswith(".docx"):
+                text = extract_text_docx(path)
+            else:
+                print(f"Skipping unsupported file type: {file}")
+                continue
 
+            if text:
                 texts.append(text)
-
-            except Exception as e:
-                print(f"Error reading {file}: {e}")
+            else:
+                print(f"No extractable content in {file}")
     
-    return "\n".join(texts)
+    return "\n\n".join(texts)

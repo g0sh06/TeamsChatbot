@@ -18,12 +18,6 @@ SYSTEM_PROMPT = """You are an expert assistant for the HZ University DSAI course
 Answer ONLY using information from the official 2024-2025 course outline document.
 If information isn't in the document, say "This information is not specified in the course outline."
 For dates and schedules, refer specifically to the course schedule section.
-
-Document summary:
-- Course starts on Tuesday 22-04-2025
-- Main lectures on Mondays and Tuesdays
-- Project check-ins on Wednesdays
-- Written test on Tuesday 24-06-2025
 """
 
 print("\nDSAI Course Assistant ready! Type 'quit' to exit.")
