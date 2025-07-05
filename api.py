@@ -21,7 +21,7 @@ model = PeftModel.from_pretrained(
 ).to("cpu")
 print("Model loaded successfully!")
 
-@app.route('/chat', methods=['POST'])
+@app.route('/chat', methods=['GET', 'POST'])
 def chat():
     data = request.json
     user_message = data.get('text', '')
@@ -43,6 +43,10 @@ def chat():
 
     # Return the response 
     return jsonify({"response": response})
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({"status": "healthy", "model_loaded": True})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000)
