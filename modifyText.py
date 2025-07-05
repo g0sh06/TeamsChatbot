@@ -9,7 +9,6 @@ tokenizer = AutoTokenizer.from_pretrained("TinyLlama/TinyLlama-1.1B-Chat-v1.0")
 
 # Get raw text
 raw_text = get_all_texts()  # Now returns a single string
-print(raw_text[:2000])
 
 def preprocess_text(text):
     text = re.sub(r'\n+', '\n', text)  

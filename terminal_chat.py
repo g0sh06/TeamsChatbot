@@ -42,9 +42,10 @@ def chat():
 
         outputs = model.generate(
             inputs,
-            max_new_tokens=900,
-            temperature=0.3,  # lower temeprature = more specific answer
-            do_sample=True
+            max_new_tokens=250,
+            temperature=0.2,  # lower temeprature = more specific answer
+            do_sample=True,
+            top_p=0.9
         )
         
         # Clean the response
