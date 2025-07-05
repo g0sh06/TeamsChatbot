@@ -12,12 +12,9 @@ raw_text = get_all_texts()  # Now returns a single string
 print(raw_text[:2000])
 
 def preprocess_text(text):
-    """Clean and normalize the text"""
-    # Lowercase
-    text = text.lower()
-    # Normalize whitespace
-    text = re.sub(r'\s+', ' ', text).strip()
-    return text
+    text = re.sub(r'\n+', '\n', text)  
+    text = re.sub(r'\s+', ' ', text)  
+    return text.strip()
 
 # Preprocess the text
 processed_text = preprocess_text(raw_text)

@@ -9,6 +9,10 @@ tokenized_dataset = text_dataset.map(
     remove_columns=["text"]
 )
 
+train_test = text_dataset.train_test_split(test_size=0.1)
+tokenized_train = train_test["train"].map(tokenize_function, batched=True)
+tokenized_val = train_test["test"].map(tokenize_function, batched=True)
+
 training_args = TrainingArguments(
     output_dir="./tinyllama-finetuned-cpu",
     per_device_train_batch_size=4,
