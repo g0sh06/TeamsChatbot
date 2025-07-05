@@ -1,46 +1,56 @@
 from chatbot import *
-from modifyText import text_dataset, tokenize_function
+from modifyText import text_dataset
 from transformers import TrainingArguments, Trainer, DataCollatorForLanguageModeling
 
+def tokenize_function(examples):
+    return tokenizer(
+        examples["text"],
+        truncation=True,
+        max_length=512,
+        padding="max_length",
+        return_tensors="pt"
+    )
 
+# Tokenize and prepare dataset
 tokenized_dataset = text_dataset.map(
     tokenize_function,
     batched=True,
     remove_columns=["text"]
 )
 
-training_args = TrainingArguments(
-    output_dir="./tinyllama-finetuned-cpu",
-    per_device_train_batch_size=4,
-    gradient_accumulation_steps=4,
-    warmup_steps=50,
-    num_train_epochs=3,
-    learning_rate=2e-5,
-    logging_dir="./logs",
-    logging_steps=5,
-    save_total_limit=1,
-    no_cuda=True, 
-    optim="adamw_torch",  
-    report_to="none",
-    disable_tqdm=False
+# For causal LM, labels should be same as input_ids
+tokenized_dataset = tokenized_dataset.map(
+    lambda examples: {"labels": examples["input_ids"].copy()},
+    batched=True
 )
 
-data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
+# Training arguments
+training_args = TrainingArguments(
+    output_dir="./tinyllama-finetuned",
+    per_device_train_batch_size=2,
+    gradient_accumulation_steps=4,
+    num_train_epochs=5,  # Increased epochs
+    learning_rate=1e-5,  # Lower learning rate
+    warmup_ratio=0.1,
+    weight_decay=0.01,
+    optim="adamw_torch",
+    logging_steps=10,
+    save_steps=200,
+    evaluation_strategy="no",
+    save_total_limit=1,
+    use_cpu=True,
+    report_to="none",
+    remove_unused_columns=False
+)
 
-label_names = ["input_ids"]  
+# Trainer setup
 trainer = Trainer(
     model=model,
     args=training_args,
     train_dataset=tokenized_dataset,
-    data_collator=data_collator
+    data_collator=DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False),
 )
 
-try:
-    trainer.train()
-    model.save_pretrained("my_tinyllama_finetuned")
-    tokenizer.save_pretrained("my_tinyllama_finetuned")
-    print("Training completed successfully!")
-except Exception as e:
-    print(f"Training failed: {e}")
-    if "CUDA out of memory" in str(e):
-        print("Try reducing batch size or sequence length")
+trainer.train()
+model.save_pretrained("my_tinyllama_finetuned")
+tokenizer.save_pretrained("my_tinyllama_finetuned")
