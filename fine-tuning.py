@@ -1,28 +1,6 @@
 from chatbot import *
-from modifyText import text_dataset
+from modifyText import tokenized_dataset
 from transformers import TrainingArguments, Trainer, DataCollatorForLanguageModeling
-
-def tokenize_function(examples):
-    return tokenizer(
-        examples["text"],
-        truncation=True,
-        max_length=512,
-        padding="max_length",
-        return_tensors="pt"
-    )
-
-# Tokenize and prepare dataset
-tokenized_dataset = text_dataset.map(
-    tokenize_function,
-    batched=True,
-    remove_columns=["text"]
-)
-
-# For causal LM, labels should be same as input_ids
-tokenized_dataset = tokenized_dataset.map(
-    lambda examples: {"labels": examples["input_ids"].copy()},
-    batched=True
-)
 
 # Training arguments
 training_args = TrainingArguments(
@@ -36,7 +14,7 @@ training_args = TrainingArguments(
     optim="adamw_torch",
     logging_steps=10,
     save_steps=200,
-    evaluation_strategy="no",
+    eval_strategy="no",
     save_total_limit=1,
     use_cpu=True,
     report_to="none",

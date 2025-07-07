@@ -14,17 +14,7 @@ base_model = AutoModelForCausalLM.from_pretrained(
 model = PeftModel.from_pretrained(base_model, "my_tinyllama_finetuned").to("cpu")
 
 
-SYSTEM_PROMPT = """You are an expert assistant for the HZ University DSAI course. 
-Answer ONLY using information from the official 2024-2025 course outline document.
-If information isn't in the document, say "This information is not specified in the course outline."
-For dates and schedules, refer specifically to the course schedule section.
-
-Document summary:
-- Course starts on Tuesday 22-04-2025
-- Main lectures on Mondays and Tuesdays
-- Project check-ins on Wednesdays
-- Written test on Tuesday 24-06-2025
-"""
+SYSTEM_PROMPT = "You are a helpful assistant for a Data Science and AI (DSAI) course."
 
 print("\nDSAI Course Assistant ready! Type 'quit' to exit.")
 
@@ -48,9 +38,12 @@ def chat():
 
         outputs = model.generate(
             inputs,
-            max_new_tokens=900,
-            temperature=0.3,  # lower temeprature = more specific answer
-            do_sample=True
+            max_new_tokens=256,
+            temperature=0.2,
+            top_p=0.9,
+            repetition_penalty=1.2,
+            do_sample=True,
+            pad_token_id=tokenizer.eos_token_id
         )
         
         # Clean the response
