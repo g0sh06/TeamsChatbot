@@ -1,9 +1,1 @@
---index-url https://download.pytorch.org/whl/cu121
-torch==2.2.1
-torchvision==0.17.1
-torchaudio==2.2.1
-transformers==4.41.2
-peft==0.16.0
-fastapi==0.104.1
-uvicorn==0.24.0.post1
-python-dotenv==1.0.0
+pip install langchain faiss-cpu langchain-community python-dotenv

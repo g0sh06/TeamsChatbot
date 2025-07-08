@@ -1,56 +1,47 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM
-from peft import PeftModel
-import torch
+from rag import RAGSystem
+from extractText import get_all_texts
+import os
 
-# Loading the model
-model_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
-# Added tokenization
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-base_model = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    torch_dtype=torch.float32,
-    device_map="cpu"
-)
-model = PeftModel.from_pretrained(base_model, "my_tinyllama_finetuned").to("cpu")
+from rag import RAGSystem
+from extractText import get_all_texts
+import os
+from dotenv import load_dotenv
 
-
-SYSTEM_PROMPT = "You are a helpful assistant for a Data Science and AI (DSAI) course."
-
-print("\nDSAI Course Assistant ready! Type 'quit' to exit.")
-
-def chat():
-    while True:
-        user_input = input("\nYou: ")
-        if user_input.lower() in ['quit', 'exit']:
-            break
-
-        # Format with system prompt and user question
-        messages = [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_input}
-        ]
-
-        inputs = tokenizer.apply_chat_template(
-            messages,
-            add_generation_prompt=True,
-            return_tensors="pt"
-        ).to("cpu")
-
-        outputs = model.generate(
-            inputs,
-            max_new_tokens=256,
-            temperature=0.2,
-            top_p=0.9,
-            repetition_penalty=1.2,
-            do_sample=True,
-            pad_token_id=tokenizer.eos_token_id
-        )
+def main():
+    try:
+        # Load environment variables
+        load_dotenv()
+        documents_folder = os.getenv('FOLDER', 'documents')  # Default to 'documents' if not set
         
-        # Clean the response
-        full_response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        assistant_response = full_response.split("<|assistant|>")[-1].strip()
-        print("\nAI:", assistant_response)
+        rag = RAGSystem()
+        
+        # Load and index documents from the folder specified in .env
+        if os.path.exists(documents_folder):
+            documents = get_all_texts(documents_folder)
+            if documents:
+                rag.index_documents(documents)
+                print(f"Documents successfully indexed from '{documents_folder}'.")
+            else:
+                print(f"Warning: No documents found in '{documents_folder}' folder")
+        else:
+            print(f"Error: Folder '{documents_folder}' does not exist")
+            print("Please create the folder and add documents, or update FOLDER in .env")
+            return
+        
+        print("RAG System Initialized. Type 'exit' to quit.\n")
+        
+        while True:
+            user_input = input("Question: ")
+            if user_input.lower() in ['exit', 'quit']:
+                break
+                
+            response = rag.answer_question(user_input)
+            print("\nResponse:")
+            print(response)
+            print("\n" + "="*80 + "\n")
+            
+    except Exception as e:
+        print(f"Error: {e}")
 
 if __name__ == "__main__":
-    chat()
-    print("Chat session ended.")
+    main()

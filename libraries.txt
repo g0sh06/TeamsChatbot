@@ -1,5 +1,0 @@
-pip install office365-rest-python-client
-pip install python-dotenv PyMuPDF python-docx
-pip install nltk
-pip install transformers datasets peft accelerate bitsandbytes
-pip install six
