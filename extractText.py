@@ -1,40 +1,56 @@
-from PyPDF2 import PdfReader
-from docx import Document  # From python-docx package
 import os
+import sys
+from dotenv import load_dotenv
+from langchain_community.document_loaders import DirectoryLoader
+from langchain.schema import Document
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.embeddings import GPT4AllEmbeddings
+import shutil
+from langchain_chroma import Chroma
 
-def get_pdf_text(pdf_path):
-    """Extract text from PDF files"""
-    text = ""
-    try:
-        reader = PdfReader(pdf_path)
-        for page in reader.pages:
-            text += page.extract_text() + "\n"
-    except Exception as e:
-        print(f"Error reading PDF {pdf_path}: {e}")
-    return text
+load_dotenv()
+DATA_PATH = os.getenv("FOLDER")
+CHROMA_PATH = "database"
 
-def get_docx_text(docx_path):
-    """Extract text from DOCX files"""
-    text = ""
-    try:
-        doc = Document(docx_path)
-        for para in doc.paragraphs:
-            text += para.text + "\n"
-    except Exception as e:
-        print(f"Error reading DOCX {docx_path}: {e}")
-    return text
+gpt4all_embeddings = GPT4AllEmbeddings(
+    model_name="all-MiniLM-L6-v2.gguf2.f16.gguf",
+    gpt4all_kwargs={'allow_download': 'True'}
+)
 
-def get_all_texts(docs_folder="documents"):
-    """Get text from all supported documents in folder"""
-    texts = []
-    for filename in os.listdir(docs_folder):
-        path = os.path.join(docs_folder, filename)
-        try:
-            if filename.lower().endswith(".pdf"):
-                texts.append(get_pdf_text(path))
-            elif filename.lower().endswith(".docx"):
-                texts.append(get_docx_text(path))
-            # Add other file types as needed
-        except Exception as e:
-            print(f"Error processing {filename}: {e}")
-    return texts
+def load_documents():
+    loader = DirectoryLoader(DATA_PATH, glob="*.pdf")
+    documents = loader.load()
+    return documents
+
+def split_text(documents: list[Document]):
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size = 300,
+        chunk_overlap=100,
+        length_function=len,
+        add_start_index=True
+    )
+
+    chunks = text_splitter.split_documents(documents=documents)
+    print(f"Split {len(documents)} documents into {len(chunks)} chunks.")
+    return chunks
+
+def save_to_chroma(chunks: list[Document]):
+    if os.path.exists(CHROMA_PATH):
+        shutil.rmtree(CHROMA_PATH)
+
+    db = Chroma.from_documents(
+        chunks, gpt4all_embeddings, persist_directory=CHROMA_PATH
+    )    
+
+    print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}")
+
+def create_vector_db():
+    "Create vector DB from personal PDF files."
+    documents = load_documents()
+    doc_chunks = split_text(documents)
+    save_to_chroma(doc_chunks)
+
+if __name__ == "__main__":    
+    create_vector_db()
+
+    
