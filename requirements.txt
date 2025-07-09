@@ -10,5 +10,4 @@ langchain-huggingface==0.1.2
 langchain-text-splitters==0.3.2
 langchain-chroma==0.1.4
 langgraph==0.2.46
-
-#run with pip install -r requirements.txt
+pysqlite3-binary
