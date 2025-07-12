@@ -6,40 +6,41 @@ from typing_extensions import Annotated, TypedDict
 
 # Environment and API configuration
 from dotenv import load_dotenv
-import google.generativeai as genai
 
 # LangChain core components
 from langchain_chroma import Chroma
 from langchain.prompts import ChatPromptTemplate
-from langchain.embeddings import GPT4AllEmbeddings
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.llms import Ollama
+from langchain_ollama import OllamaLLM
 # LangGraph imports
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import START, StateGraph
 from langgraph.graph.message import add_messages
+from model import gpt4all_embeddings
 
 load_dotenv()
 
-
-CHROMA_PATH = "chroma"
-
-gpt4all_embeddings = GPT4AllEmbeddings(
-    model_name="all-MiniLM-L6-v2.gguf2.f16.gguf",
-    gpt4all_kwargs={'allow_download': 'True'}
-)
+CHROMA_PATH = "database"
 
 db = Chroma(persist_directory=CHROMA_PATH,
             embedding_function=gpt4all_embeddings)
 
-retriever = db.as_retriever(search_type="similarity")
+retriever = db.as_retriever(
+    search_type="mmr", 
+    search_kwargs={
+        "k": 8,
+        "score_threshold": 0.4,  
+        "fetch_k": 20  
+    }
+)
 
-llm = Ollama(model="llama2", temperature=0.2)
+
+llm = OllamaLLM(model="llama2", temperature=0.2)
 
     
 def contextualize_question():
@@ -156,6 +157,10 @@ def call_model(state: State):
     """
     rag_chain = answer_question()
     response = rag_chain.invoke(state)
+
+    print("\n🟡 USER QUESTION:", state["input"])
+    print("\n🟩 CONTEXT RETRIEVED FROM CHROMA:\n", response.get("context"))
+    print("\n🟦 MODEL RESPONSE:\n", response.get("answer"))
     
     return {
         "chat_history": [

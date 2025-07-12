@@ -6,19 +6,15 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.embeddings import GPT4AllEmbeddings
 import shutil
 from langchain_chroma import Chroma
+from model import gpt4all_embeddings
 
 load_dotenv()
 DATA_PATH = os.getenv("FOLDER")
 CHROMA_PATH = "database"
 
-gpt4all_embeddings = GPT4AllEmbeddings(
-    model_name="all-MiniLM-L6-v2.gguf2.f16.gguf",
-    device="cpu",  # Force CPU mode to avoid DLL errors
-    gpt4all_kwargs={'allow_download': True}  # Removed quotes from True
-)
 
 def load_documents():
-    loader = DirectoryLoader(DATA_PATH, glob="*.pdf")
+    loader = DirectoryLoader(DATA_PATH, glob="*.pdf", loader_kwargs={"add_page_number": True})
     documents = loader.load()
     return documents
 
