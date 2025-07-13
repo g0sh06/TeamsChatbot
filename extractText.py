@@ -24,7 +24,24 @@ def tiktoken_len(text):
     return len(encoding.encode(text))
 
 def split_text(documents: list[Document]):
-    text_splitter = NLTKTextSplitter()
+    text_splitter = NLTKTextSplitter(
+        chunk_size=500,  # Balanced for most documents
+        chunk_overlap=100,
+        length_function=len,
+        separators=[
+            "\n\n",       # Double newlines (paragraphs)
+            "\n• ",       # Bullet points
+            "\n- ",       # Dashed lists
+            "\n* ",       # Asterisk lists
+            "\n\d+\.\s",  # Numbered lists (1., 2.)
+            "Lecturer:",  # Your specific case
+            "---",        # Section breaks
+            "\n",         # Fallback to single newline
+            " ",           # Final fallback
+        ],
+        keep_separator=True  # Preserve formatting
+    )
+
     chunks = text_splitter.split_documents(documents)
     print(f"Split {len(documents)} documents into {len(chunks)} chunks.")
     return chunks
