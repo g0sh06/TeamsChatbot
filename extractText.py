@@ -1,12 +1,13 @@
 import os
 from dotenv import load_dotenv
-from langchain.document_loaders import DirectoryLoader
+from langchain_community.document_loaders import DirectoryLoader
 from langchain_core.documents import Document
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain.embeddings import GPT4AllEmbeddings
+from langchain_text_splitters import NLTKTextSplitter
+from langchain_community.embeddings import GPT4AllEmbeddings
 import shutil
 from langchain_chroma import Chroma
 from model import gpt4all_embeddings
+import tiktoken
 
 load_dotenv()
 DATA_PATH = os.getenv("FOLDER")
@@ -18,13 +19,12 @@ def load_documents():
     documents = loader.load()
     return documents
 
+def tiktoken_len(text):
+    encoding = tiktoken.get_encoding("cl100k_base")  # Used by OpenAI's GPT-4
+    return len(encoding.encode(text))
+
 def split_text(documents: list[Document]):
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=300,
-        chunk_overlap=100,
-        length_function=len,
-        add_start_index=True
-    )
+    text_splitter = NLTKTextSplitter()
     chunks = text_splitter.split_documents(documents)
     print(f"Split {len(documents)} documents into {len(chunks)} chunks.")
     return chunks

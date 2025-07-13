@@ -31,17 +31,15 @@ db = Chroma(persist_directory=CHROMA_PATH,
             embedding_function=gpt4all_embeddings)
 
 retriever = db.as_retriever(
-    search_type="mmr", 
+    search_type="mmr",
     search_kwargs={
-        "k": 8,
-        "score_threshold": 0.4,  
-        "fetch_k": 20  
+        "k": 10,
+        "fetch_k": 25,
+        "lambda_mult": 0.6
     }
 )
 
-
-llm = OllamaLLM(model="llama2", temperature=0.2)
-
+llm = OllamaLLM(model="mistral", temperature=0.2)
     
 def contextualize_question():
     """
@@ -94,10 +92,16 @@ def answer_question():
         A chain that reformulates questions, retrieves relevant context, and generates answers.
     """
     answer_question_prompt = """ 
-    Use the following pieces of retrieved context to answer the question. \
-    Use three to seven sentences maximum and keep the answer concise, while still giving depth.\
+    You are a helpful assistant. Use ONLY the context provided below to answer.
 
-    {context}"""
+    Rules:
+    - If the context is empty, say: "I couldn't find that information based on the course materials."
+    - DO NOT guess or fabricate anything.
+    - DO NOT rely on prior memory or general knowledge.
+    - Your answer must be based 100% on the retrieved context only.
+
+    Context: {context}
+    """
     
     answer_question_template = ChatPromptTemplate.from_messages(
         [
@@ -138,37 +142,26 @@ class State(TypedDict):
 
 
 def call_model(state: State):
-    """
-    Executes a Retrieval-Augmented Generation (RAG) chain and updates the application state.
-
-    Parameters
-    ----------
-    state : State
-        The current application state, containing the user input, chat history, and placeholders 
-        for the context and answer.
-
-    Returns
-    -------
-    dict
-        Updated state with:
-        - `chat_history`: Appended user query and AI response.
-        - `context`: Retrieved context used for the answer.
-        - `answer`: Generated response to the user query.
-    """
     rag_chain = answer_question()
     response = rag_chain.invoke(state)
 
+    retrieved_docs = response.get("context")
+    answer = response.get("answer")
+
+    if not retrieved_docs or all(doc.page_content.strip() == "" for doc in retrieved_docs):
+        answer = "I couldn't find that information based on the course materials."
+
     print("\n🟡 USER QUESTION:", state["input"])
-    print("\n🟩 CONTEXT RETRIEVED FROM CHROMA:\n", response.get("context"))
-    print("\n🟦 MODEL RESPONSE:\n", response.get("answer"))
-    
+    print("\n🟩 CONTEXT RETRIEVED FROM CHROMA:\n", retrieved_docs)
+    print("\n🟦 MODEL RESPONSE:\n", answer)
+
     return {
         "chat_history": [
             HumanMessage(state["input"]),
-            AIMessage(response["answer"]),
+            AIMessage(answer),
         ],
-        "context": response["context"],
-        "answer": response["answer"],
+        "context": retrieved_docs,
+        "answer": answer,
     }
 
 
