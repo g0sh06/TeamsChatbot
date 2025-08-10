@@ -6,11 +6,16 @@ services:
     ports:
       - "8501:8501"
       - "11434:11434"
+    dns:
+      - 8.8.8.8  
+      - 1.1.1.1
     volumes:
       - ./:/app
       - ollama_data:/root/.ollama
     environment:
       - OLLAMA_HOST=0.0.0.0
+      - HF_HUB_DISABLE_SYMLINKS_WARNING=1
+    entrypoint: /app/entrypoint.sh  
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8501"]

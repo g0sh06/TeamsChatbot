@@ -39,7 +39,11 @@ retriever = db.as_retriever(
     }
 )
 
-llm = OllamaLLM(model="mistral", temperature=0.2)
+llm = OllamaLLM(
+    model="mistral",
+    temperature=0.2,
+    base_url="http://localhost:11434"  # Point to local Ollama
+)
     
 def contextualize_question():
     """

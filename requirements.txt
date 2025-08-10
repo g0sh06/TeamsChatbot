@@ -10,5 +10,7 @@ nltk
 transformers
 torch
 sentence-transformers
+langchain_huggingface
+gpt4all
 
 #run with pip install -r requirements.txt
