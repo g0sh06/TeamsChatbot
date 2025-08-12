@@ -4,6 +4,7 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV OLLAMA_HOST=0.0.0.0
+ENV OLLAMA_NO_CUDA=1
 
 WORKDIR /app
 
@@ -25,14 +26,17 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Download NLTK data
 RUN python -m nltk.downloader punkt
 
-# Copy all app files (including start.sh if you have one)
+# Create necessary directories
+RUN mkdir -p /app/uploaded_docs /app/database
+
+# Copy application files
 COPY . .
 
-# Create startup script directly in final location
+# Set up startup script
 RUN echo '#!/bin/bash\n\
-ollama serve > /var/log/ollama.log 2>&1 & \n\
-sleep 15 \n\
-ollama pull mistral \n\
+ollama serve > /var/log/ollama.log 2>&1 &\n\
+sleep 15\n\
+ollama pull mistral\n\
 streamlit run main.py --server.port=8501 --server.address=0.0.0.0' > /start.sh && \
     chmod +x /start.sh
 

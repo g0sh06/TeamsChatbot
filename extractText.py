@@ -13,6 +13,27 @@ load_dotenv()
 DATA_PATH = os.getenv("FOLDER")
 CHROMA_PATH = "database"
 
+def create_vector_db_from_files(file_paths: list):
+    """Create vector DB from specific file paths"""
+    documents = load_documents_from_files(file_paths)
+    doc_chunks = split_text(documents)
+    save_to_chroma(doc_chunks)
+
+def load_documents_from_files(file_paths: list):
+    """Load documents from specific file paths"""
+    from langchain_community.document_loaders import PyPDFLoader
+    
+    documents = []
+    for file_path in file_paths:
+        try:
+            loader = PyPDFLoader(file_path)
+            docs = loader.load()
+            documents.extend(docs)
+            print(f"Loaded: {file_path}")
+        except Exception as e:
+            print(f"Error loading {file_path}: {str(e)}")
+    return documents
+
 
 def load_documents():
     loader = DirectoryLoader(DATA_PATH, glob="*.pdf", loader_kwargs={"add_page_number": True})

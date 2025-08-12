@@ -6,22 +6,51 @@ services:
     ports:
       - "8501:8501"
       - "11434:11434"
-    dns:
-      - 8.8.8.8  
-      - 1.1.1.1
     volumes:
-      - ./:/app
+      - type: bind
+        source: ./uploaded_docs
+        target: /app/uploaded_docs
+      - type: bind
+        source: ./database
+        target: /app/database
       - ollama_data:/root/.ollama
     environment:
       - OLLAMA_HOST=0.0.0.0
       - HF_HUB_DISABLE_SYMLINKS_WARNING=1
-    entrypoint: /app/entrypoint.sh  
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8501"]
       interval: 30s
       timeout: 10s
       retries: 3
+    command: >
+      bash -c "
+        ollama serve > /var/log/ollama.log 2>&1 &
+        sleep 15 &&
+        ollama pull mistral &&
+        streamlit run main.py --server.port=8501 --server.address=0.0.0.0
+      "
+
+  teacher-upload:
+    build: .
+    ports:
+      - "8502:8502"
+    volumes:
+      - type: bind
+        source: ./uploaded_docs
+        target: /app/uploaded_docs
+      - type: bind
+        source: ./database
+        target: /app/database
+    restart: unless-stopped
+    depends_on:
+      rag-chatbot:
+        condition: service_healthy
+    command: >
+      bash -c "
+        sleep 10 &&
+        streamlit run upload.py --server.port=8502 --server.address=0.0.0.0
+      "
 
 volumes:
   ollama_data:

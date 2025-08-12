@@ -2,7 +2,6 @@ import streamlit as st
 from helper import execute_user_query
 import sqlite3
 
-
 st.title("About DS/AI course")
 
 # Initialize chat history
@@ -26,7 +25,6 @@ if query_text := st.chat_input("Ask away!"):
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": query_text})
 
-if query_text:
     response = execute_user_query(query_text)
     
     # Display assistant response in chat message container
