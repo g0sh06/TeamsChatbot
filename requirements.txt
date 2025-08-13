@@ -12,5 +12,6 @@ torch
 sentence-transformers
 langchain_huggingface
 gpt4all
+pypdf
 
 #run with pip install -r requirements.txt

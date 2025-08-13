@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from langchain_community.document_loaders import DirectoryLoader
 from langchain_core.documents import Document
-from langchain_text_splitters import NLTKTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import GPT4AllEmbeddings
 import shutil
 from langchain_chroma import Chroma
@@ -34,7 +34,6 @@ def load_documents_from_files(file_paths: list):
             print(f"Error loading {file_path}: {str(e)}")
     return documents
 
-
 def load_documents():
     loader = DirectoryLoader(DATA_PATH, glob="*.pdf", loader_kwargs={"add_page_number": True})
     documents = loader.load()
@@ -45,22 +44,20 @@ def tiktoken_len(text):
     return len(encoding.encode(text))
 
 def split_text(documents: list[Document]):
-    text_splitter = NLTKTextSplitter(
-        chunk_size=500,  # Balanced for most documents
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=500,
         chunk_overlap=100,
-        length_function=len,
+        length_function=tiktoken_len,  # Using token count instead of character count
         separators=[
             "\n\n",       # Double newlines (paragraphs)
             "\n• ",       # Bullet points
             "\n- ",       # Dashed lists
             "\n* ",       # Asterisk lists
-            "\n\d+\.\s",  # Numbered lists (1., 2.)
-            "Lecturer:",  # Your specific case
-            "---",        # Section breaks
-            "\n",         # Fallback to single newline
-            " ",           # Final fallback
+            "\n",         # Single newlines
+            " ",          # Spaces
+            "",           # Final fallback
         ],
-        keep_separator=True  # Preserve formatting
+        keep_separator=True
     )
 
     chunks = text_splitter.split_documents(documents)
@@ -85,4 +82,3 @@ def create_vector_db():
 
 if __name__ == "__main__":
     create_vector_db()
-    
