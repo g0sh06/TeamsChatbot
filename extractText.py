@@ -65,15 +65,31 @@ def split_text(documents: list[Document]):
     return chunks
 
 def save_to_chroma(chunks: list[Document]):
-    if os.path.exists(CHROMA_PATH):
-        shutil.rmtree(CHROMA_PATH)
-
-    Chroma.from_documents(
+    import time
+    max_retries = 5
+    
+    # Retry deletion if busy
+    for attempt in range(max_retries):
+        try:
+            if os.path.exists(CHROMA_PATH):
+                shutil.rmtree(CHROMA_PATH)
+            break
+        except OSError as e:
+            if attempt == max_retries - 1:
+                raise
+            time.sleep(1)  # Wait before retrying
+    
+    # Proceed with Chroma creation
+    db = Chroma.from_documents(
         chunks, 
         gpt4all_embeddings, 
         persist_directory=CHROMA_PATH
     )
-    print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}")
+    print(f"\nSaved {len(chunks)} chunks to {CHROMA_PATH}")
+
+    # Verify embeddings exist
+    print("\n=== CHROMA DB INFO ===")
+    print("Collection count:", db._collection.count())
 
 def create_vector_db():
     documents = load_documents()
