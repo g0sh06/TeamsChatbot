@@ -21,7 +21,8 @@ services:
     ports:
       - "8502:8502"
     volumes:
-      - ./uploaded_docs:/app/uploaded_docs   
+      - ./uploaded_docs:/app/uploaded_docs  
+      - database_data:/app/database 
     restart: unless-stopped
     depends_on:
       - rag-chatbot
