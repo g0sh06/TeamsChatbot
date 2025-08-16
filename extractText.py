@@ -41,8 +41,8 @@ def load_documents_from_files(file_paths: list):
 def split_text(documents: list[Document]):
     print("\nSplitting documents...")
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=300,  # Reduced for better retrieval
-        chunk_overlap=50,
+        chunk_size=600,  
+        chunk_overlap=100,
         length_function=tiktoken_len,
         separators=["\n\n", "\n", " ", ""],
         keep_separator=True

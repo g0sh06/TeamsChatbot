@@ -31,11 +31,11 @@ db = Chroma(persist_directory=CHROMA_PATH,
             embedding_function=gpt4all_embeddings)
 
 retriever = db.as_retriever(
-    search_type="mmr",
+    search_type="similarity",
     search_kwargs={
-        "k": 10,
-        "fetch_k": 25,
-        "lambda_mult": 0.6
+        "k": 12,
+        "fetch_k": 40,
+        "lambda_mult": 0.8
     }
 )
 
