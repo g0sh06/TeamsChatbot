@@ -13,5 +13,7 @@ sentence-transformers
 langchain_huggingface
 gpt4all
 pypdf
+flask
+peft
 
 #run with pip install -r requirements.txt

@@ -36,10 +36,11 @@ def get_rag_context(query):
         return ""
 
 def format_for_teams(response_text):
-    """Format response for Microsoft Teams"""
+    """Format response for Microsoft Teams with proper formatting"""
     return {
         "type": "message",
-        "text": response_text
+        "text": response_text,
+        "textFormat": "markdown"  # Teams supports markdown
     }
 
 @app.route('/chat', methods=['GET', 'POST'])
@@ -69,7 +70,7 @@ def chat():
     outputs = model.generate(
         **inputs,
         max_new_tokens=100,
-        temperature=0.7,
+        temperature=0.2,
         do_sample=True
     )
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
@@ -84,11 +85,16 @@ def chat():
 def bot_framework_messages():
     """Endpoint for Azure Bot Service"""
     activity = request.json
+    
     if activity['type'] == 'message':
         user_message = activity['text']
         
+        # Get RAG context
+        context = get_rag_context(user_message)
+        
         # Generate response
-        inputs = tokenizer(user_message, return_tensors="pt").to("cpu")
+        prompt = f"Context: {context}\n\nQuestion: {user_message}\n\nAnswer:"
+        inputs = tokenizer(prompt, return_tensors="pt").to("cpu")
         outputs = model.generate(
             **inputs,
             max_new_tokens=100,
@@ -96,7 +102,7 @@ def bot_framework_messages():
             do_sample=True
         )
         response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        response = response.replace(user_message, "").strip()
+        response = response.replace(prompt, "").strip()
         
         # Return proper Bot Framework response
         return jsonify({
@@ -104,6 +110,7 @@ def bot_framework_messages():
             "text": response
         })
     
+    # Handle other activity types
     return jsonify({"status": "ok"})
 
 @app.route('/health', methods=['GET'])

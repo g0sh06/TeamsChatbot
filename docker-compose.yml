@@ -1,6 +1,21 @@
 version: '3.8'
 
 services:
+
+  api-service:
+      build: .
+      ports:
+        - "8000:8000"  # Expose port 8000 for the API
+      volumes:
+        - ./uploaded_docs:/app/uploaded_docs  
+        - database_data:/app/database      
+        - ollama_data:/root/.ollama
+      environment:
+        - OLLAMA_HOST=0.0.0.0
+        - HF_HUB_DISABLE_SYMLINKS_WARNING=1
+      restart: unless-stopped
+      command: python api.py
+      
   rag-chatbot:
     build: .
     ports:
