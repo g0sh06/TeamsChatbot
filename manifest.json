@@ -1,0 +1,51 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.16",
+  "version": "1.0.0",
+  "id": "your-app-id-here",
+  "packageName": "com.yourcompany.dsai-chatbot",
+  "developer": {
+    "name": "Your Company",
+    "websiteUrl": "https://yourdomain.com",
+    "privacyUrl": "https://yourdomain.com/privacy",
+    "termsOfUseUrl": "https://yourdomain.com/terms"
+  },
+  "name": {
+    "short": "DS/AI Course Bot",
+    "full": "DS/AI Course Assistant Bot"
+  },
+  "description": {
+    "short": "Chatbot for DS/AI course questions",
+    "full": "A chatbot that answers questions about the Data Science and Artificial Intelligence course materials."
+  },
+  "icons": {
+    "outline": "outline-icon.png",
+    "color": "color-icon.png"
+  },
+  "accentColor": "#FFFFFF",
+  "bots": [
+    {
+      "botId": "your-bot-id-from-azure",
+      "needsChannelSelector": false,
+      "isNotificationOnly": false,
+      "scopes": ["team", "personal"],
+      "commandLists": [
+        {
+          "scopes": ["team", "personal"],
+          "commands": [
+            {
+              "title": "Help",
+              "description": "Shows help information"
+            },
+            {
+              "title": "Ask",
+              "description": "Ask a question about the course"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "permissions": ["identity", "messageTeamMembers"],
+  "validDomains": ["yourdomain.com"]
+}
