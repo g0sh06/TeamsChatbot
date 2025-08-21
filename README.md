@@ -1,2 +1,2 @@
-# TeamsChatbot
-Selflearning chatbot implemented into Teams channel
+# Chatbot
+Selflearning chatbot 
