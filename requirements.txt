@@ -13,5 +13,6 @@ sentence-transformers
 langchain_huggingface
 gpt4all
 pypdf
+pysqlite3-binary 
 
 #run with pip install -r requirements.txt
