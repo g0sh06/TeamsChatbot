@@ -8,7 +8,6 @@ from typing_extensions import Annotated, TypedDict
 from dotenv import load_dotenv
 
 # LangChain core components
-from langchain_community.vectorstores import FAISS
 from langchain.prompts import ChatPromptTemplate
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -17,6 +16,9 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_ollama import OllamaLLM
+from langchain_community.vectorstores import FAISS
+from langchain_core.documents import Document
+
 # LangGraph imports
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import START, StateGraph
@@ -27,42 +29,76 @@ load_dotenv()
 
 CHROMA_PATH = "database"
 
-db = FAISS.load_local(
-    CHROMA_PATH,
-    gpt4all_embeddings,
-    allow_dangerous_deserialization=True
-)
+# Global variables that will be initialized lazily
+_db = None
+_retriever = None
 
-retriever = db.as_retriever(
-    search_type="similarity",
-    search_kwargs={
-        "k": 12,
-        "fetch_k": 40,
-        "lambda_mult": 0.8
-    }
-)
+def initialize_database():
+    """Initialize the database only when needed"""
+    global _db, _retriever
+    
+    if _db is not None:
+        return _db, _retriever
+    
+    try:
+        # Check if database exists and has files
+        if (os.path.exists(CHROMA_PATH) and 
+            any(fname.endswith('.faiss') or fname.endswith('.pkl') 
+                for fname in os.listdir(CHROMA_PATH))):
+            
+            _db = FAISS.load_local(
+                CHROMA_PATH,
+                gpt4all_embeddings,
+                allow_dangerous_deserialization=True
+            )
+            print("✅ Loaded existing FAISS database")
+        else:
+            # Create empty database if none exists
+            print("⚠️ No FAISS database found. Creating empty database...")
+            os.makedirs(CHROMA_PATH, exist_ok=True)
+            empty_docs = [Document(page_content="No documents processed yet.", metadata={})]
+            _db = FAISS.from_documents(empty_docs, gpt4all_embeddings)
+            _db.save_local(CHROMA_PATH)
+            print("✅ Created empty FAISS database")
+        
+        # Create retriever
+        _retriever = _db.as_retriever(
+            search_type="similarity",
+            search_kwargs={
+                "k": 12,
+                "fetch_k": 40,
+                "lambda_mult": 0.8
+            }
+        )
+        
+        return _db, _retriever
+        
+    except Exception as e:
+        print(f"❌ Error initializing database: {e}")
+        # Fallback: create empty database in memory
+        empty_docs = [Document(page_content="No documents processed yet.", metadata={})]
+        _db = FAISS.from_documents(empty_docs, gpt4all_embeddings)
+        _retriever = _db.as_retriever(
+            search_type="similarity",
+            search_kwargs={"k": 1}
+        )
+        return _db, _retriever
+
+def get_retriever():
+    """Get the retriever, initializing if necessary"""
+    global _retriever
+    if _retriever is None:
+        _, _retriever = initialize_database()
+    return _retriever
 
 llm = OllamaLLM(
     model="mistral",
     temperature=0.2,
-    base_url="http://localhost:11434"  # Point to local Ollama
+    base_url="http://localhost:11434"
 )
-    
+
 def contextualize_question():
-    """
-    Create a history-aware retriever to reformulate user queries into standalone questions.
-
-    This function generates a retriever that uses a language model (LLM) to reformulate a user's 
-    latest question into a standalone question, ensuring it is understandable without requiring 
-    the context of prior chat history. The retriever is configured using a specified prompt 
-    template and associated components.
-
-    Returns
-    -------
-    history_aware_retriever : object
-        A retriever object capable of reformulating user queries into standalone questions 
-        by leveraging the provided language model, retriever, and prompt.
-    """
+    """Create a history-aware retriever"""
     question_reformulation_prompt = """
     Given a chat history and the latest user question \
     which might reference context in the chat history, formulate a standalone question \
@@ -77,6 +113,7 @@ def contextualize_question():
         ]
     )
 
+    retriever = get_retriever()  # Use the lazy-loaded retriever
     history_aware_retriever = create_history_aware_retriever(
         llm, retriever, question_reformulation_template 
     )
@@ -84,20 +121,7 @@ def contextualize_question():
     return history_aware_retriever
 
 def answer_question():
-    """
-    Creates a Retrieval-Augmented Generation (RAG) chain to answer user questions 
-    by leveraging a history-aware retriever and a question-answering chain.
-
-    This function combines context retrieval and answer generation:
-    - Reformulates user queries into standalone questions if necessary.
-    - Retrieves relevant context from a knowledge base or vector database.
-    - Generates concise, depthful answers based on the retrieved context.
-
-    Returns
-    -------
-    rag_chain : RetrievalAugmentedGenerationChain
-        A chain that reformulates questions, retrieves relevant context, and generates answers.
-    """
+    """Creates a RAG chain"""
     answer_question_prompt = """ 
     You are a helpful assistant. Use ONLY the context provided below to answer.
 
@@ -119,34 +143,16 @@ def answer_question():
     )
     
     answer_question_chain = create_stuff_documents_chain(llm, answer_question_template)
-    
     history_aware_retriever = contextualize_question()
-    
     rag_chain = create_retrieval_chain(history_aware_retriever, answer_question_chain)
     
     return rag_chain
 
-
 class State(TypedDict):
-    """
-    Represents the application state for a conversational workflow.
-
-    Attributes
-    ----------
-    input : str
-        The latest user query or input.
-    chat_history : Annotated[Sequence[BaseMessage], add_messages]
-        A sequence of messages representing the chat history, including user and AI messages.
-    context : str
-        The retrieved context relevant to the current query.
-    answer : str
-        The generated response to the user's query.
-    """
     input: str
     chat_history: Annotated[Sequence[BaseMessage], add_messages]
     context: str
     answer: str
-
 
 def call_model(state: State):
     rag_chain = answer_question()
@@ -171,18 +177,6 @@ def call_model(state: State):
         "answer": answer,
     }
 
-
-# Defines and compiles a stateful workflow for managing a conversational application.
-
-# Attributes
-# ----------
-# workflow : StateGraph
-#     A directed graph that defines the flow of tasks (nodes) and their connections (edges).
-# memory : MemorySaver
-#     A persistence mechanism that saves and restores the workflow's state in memory.
-# app : CompiledStateGraph
-#     The final compiled workflow, ready to execute with state management.
-
 workflow = StateGraph(state_schema=State)
 workflow.add_edge(START, "model")
 workflow.add_node("model", call_model)
@@ -190,28 +184,12 @@ workflow.add_node("model", call_model)
 memory = MemorySaver()
 app = workflow.compile(checkpointer=memory)
 
-
 def execute_user_query(query_text):
-    """
-    Executes the question-answering (QA) workflow with the provided query.
-
-    Parameters
-    ----------
-    query_text : str
-        The input query or question to be processed by the QA system.
-
-    Returns
-    -------
-    str
-        The generated answer to the input query.
-
-    Notes
-    -----
-    - The function uses a precompiled `app` to execute the workflow.
-    - A configuration dictionary is passed, which includes a `thread_id` for tracking.
-    - The `app.invoke` method processes the query, retrieves relevant context, and generates a response.
-    """
+    """Execute the QA workflow"""
     config = {"configurable": {"thread_id": "abc123"}}
+    
+    # Initialize database if not already done
+    get_retriever()
     
     result = app.invoke(
         {"input": query_text},
@@ -220,6 +198,5 @@ def execute_user_query(query_text):
     
     return result["answer"]
 
-
 if __name__ == "__main__":
-    execute_user_query(query_text)
+    execute_user_query("test query")
