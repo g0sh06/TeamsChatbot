@@ -8,7 +8,7 @@ from typing_extensions import Annotated, TypedDict
 from dotenv import load_dotenv
 
 # LangChain core components
-from langchain_chroma import Chroma
+from langchain_community.vectorstores import FAISS
 from langchain.prompts import ChatPromptTemplate
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -27,8 +27,11 @@ load_dotenv()
 
 CHROMA_PATH = "database"
 
-db = Chroma(persist_directory=CHROMA_PATH,
-            embedding_function=gpt4all_embeddings)
+db = FAISS.load_local(
+    CHROMA_PATH,
+    gpt4all_embeddings,
+    allow_dangerous_deserialization=True
+)
 
 retriever = db.as_retriever(
     search_type="similarity",
