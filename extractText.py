@@ -1,4 +1,7 @@
 import os
+import sys
+__import__('pysqlite3')
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 from dotenv import load_dotenv
 from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain_core.documents import Document
@@ -8,6 +11,7 @@ from model import gpt4all_embeddings
 import tiktoken
 import shutil
 import time
+
 
 load_dotenv()
 CHROMA_PATH = os.path.abspath("database")  # Use absolute path

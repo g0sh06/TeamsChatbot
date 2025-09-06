@@ -1,0 +1,22 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.16",
+  "version": "1.0.0",
+  "id": "d4ee79f3-f7f1-4325-8ca5-c754bcc20d4e",
+  "packageName": "com.example.dsai-chatbot",
+  "developer": {
+    "name": "Your Name",
+    "websiteUrl": "https://your-ngrok-url.ngrok.io",
+    "privacyUrl": "https://your-ngrok-url.ngrok.io/privacy",
+    "termsOfUseUrl": "https://your-ngrok-url.ngrok.io/terms"
+  },
+  "bots": [
+    {
+      "botId": "d4ee79f3-f7f1-4325-8ca5-c754bcc20d4e",
+      "scopes": ["team", "personal"],
+      "isNotificationOnly": false,
+      "supportsFiles": false
+    }
+  ],
+  "permissions": ["identity", "messageTeamMembers"]
+}

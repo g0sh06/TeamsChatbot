@@ -19,6 +19,12 @@ RUN apt-get update && apt-get install -y \
 # Install Ollama
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
+# Add to your Dockerfile
+RUN wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz && \
+    tar -xzf ngrok-v3-stable-linux-amd64.tgz && \
+    mv ngrok /usr/local/bin/ && \
+    rm ngrok-v3-stable-linux-amd64.tgz
+    
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
