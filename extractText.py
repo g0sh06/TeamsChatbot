@@ -1,5 +1,7 @@
 import os
 import sys
+import chromadb
+from chromadb.config import Settings
 from dotenv import load_dotenv
 from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain_core.documents import Document
@@ -10,10 +12,14 @@ import tiktoken
 import shutil
 import time
 
-
 load_dotenv()
 CHROMA_PATH = os.path.abspath("database")  # Use absolute path
 os.makedirs(CHROMA_PATH, exist_ok=True)  # Ensure directory exists
+
+chroma_client = chromadb.Client(Settings(
+    chroma_db_impl="duckdb+parquet",
+    persist_directory=CHROMA_PATH
+))
 
 def tiktoken_len(text):
     encoding = tiktoken.get_encoding("cl100k_base")  # Used by OpenAI's GPT-4
