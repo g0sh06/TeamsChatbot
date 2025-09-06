@@ -15,8 +15,6 @@ gpt4all
 pypdf
 flask
 peft
-pysqlite3
 chromadb
-pysqlite3-binary 
 
 #run with pip install -r requirements.txt
