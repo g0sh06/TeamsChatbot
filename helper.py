@@ -65,8 +65,8 @@ def initialize_database():
         _retriever = _db.as_retriever(
             search_type="similarity",
             search_kwargs={
-                "k": 12,
-                "fetch_k": 40,
+                "k": 6,
+                "fetch_k": 20,
                 "lambda_mult": 0.8
             }
         )
@@ -188,9 +188,6 @@ def execute_user_query(query_text):
     """Execute the QA workflow"""
     config = {"configurable": {"thread_id": "abc123"}}
     
-    # Initialize database if not already done
-    get_retriever()
-    
     result = app.invoke(
         {"input": query_text},
         config=config,
@@ -199,4 +196,5 @@ def execute_user_query(query_text):
     return result["answer"]
 
 if __name__ == "__main__":
+    get_retriever()
     execute_user_query("test query")

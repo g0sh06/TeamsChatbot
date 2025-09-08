@@ -11,6 +11,12 @@ done
 # Pull model
 ollama pull mistral
 
+echo "Preloading components..."
+python -c "
+from helper import preload_components
+preload_components()
+"
+
 # Start ngrok tunnel
 ngrok http 8501 > /var/log/ngrok.log 2>&1 &
 
