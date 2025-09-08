@@ -7,13 +7,14 @@ langgraph
 tiktoken
 python-dotenv
 nltk
-transformers
-torch
 sentence-transformers
 langchain_huggingface
 gpt4all
 pypdf
-flask
-peft
 faiss-cpu
+# Remove these if not needed:
+# transformers
+# torch
+# flask
+# peft
 #run with pip install -r requirements.txt

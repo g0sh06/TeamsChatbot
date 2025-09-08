@@ -1,40 +1,6 @@
 version: '3.8'
 
 services:
-  api-service:
-    build: .
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./uploaded_docs:/app/uploaded_docs  
-      - database_data:/app/database      
-      - ollama_data:/root/.ollama
-    environment:
-      - OLLAMA_HOST=0.0.0.0
-      - HF_HUB_DISABLE_SYMLINKS_WARNING=1
-      - BOT_APP_ID=54d2859a-164d-4fd5-8ab3-796f8d8cb3b0
-      - BOT_APP_PASSWORD=${BOT_APP_PASSWORD}
-    restart: unless-stopped
-    command: python api.py
-  
-  # Add this new service for Teams integration
-  teams-bot:
-    build: .
-    ports:
-      - "3978:3978"
-    environment:
-      - BOT_APP_ID=${BOT_APP_ID}
-      - BOT_APP_PASSWORD=${BOT_APP_PASSWORD}
-      - RAG_SERVICE_URL=http://api-service:8000
-    restart: unless-stopped
-    depends_on:
-      - api-service
-    command: >
-      bash -c "
-        pip install botbuilder-core botbuilder-integration-aiohttp &&
-        python -m teams_bot
-      "
-
   rag-chatbot:
     build: .
     ports:
